@@ -160,18 +160,12 @@ async function addClient(body, res) {
 
 // create a new employee function
 async function addEmployee(body, res) {
-  const { email, password, username } = body;
-  if (!username || !password || !email) {
+  const { password, username } = body;
+  if (!username || !password) {
     return res.send({
       status: 404,
       message: `Missing ${
-        username
-          ? password
-            ? email
-              ? "will never run :)"
-              : "Email"
-            : "Password"
-          : "Username"
+        username ? (password ? "will never run :)" : "Password") : "Username"
       }`,
     });
   }
@@ -184,6 +178,73 @@ async function addEmployee(body, res) {
     status: 200,
     message: "Created New Employee " + newEmployee.username,
   });
+}
+
+// update the client table with the additional information
+async function updateClient(body, res) {
+  const {
+    clientId,
+    firstName,
+    surname,
+    addressLine1,
+    addressLine2,
+    postCode,
+    telephoneNumber,
+  } = body;
+  if (
+    !firstName ||
+    !surname ||
+    !addressLine1 ||
+    !addressLine2 ||
+    !postCode ||
+    !telephoneNumber
+  ) {
+    return res.send({
+      status: 404,
+      message: `Missing ${
+        firstName
+          ? surname
+            ? addressLine1
+              ? addressLine2
+                ? postCode
+                  ? telephoneNumber
+                    ? "will never run :)"
+                    : "Telephone Number"
+                  : "Post Code"
+                : "Address Line 2"
+              : "Address Line 1"
+            : "Surname"
+          : "First name"
+      }`,
+    });
+  }
+  await Client.findOneAndUpdate(
+    { clientId: ObjectId(clientId) },
+    {
+      firstName: firstName,
+      surname: surname,
+      addressLine1: addressLine1,
+      addressLine2: addressLine2,
+      postCode: postCode,
+      telephoneNumber: telephoneNumber,
+    }
+  );
+}
+
+// create a new booking
+async function addBooking(body, res) {
+  const requestDate = body.requestDate;
+  if (!requestDate) {
+    return res.send({
+      status: 404,
+      message: `Missing Request Date`,
+    });
+  }
+  const newBooking = new Booking(body);
+  const bookingId = ObjectId();
+  newBooking.bookingId = bookingId;
+  newBooking.requestDate = requestDate;
+  await newBooking.save();
 }
 
 // create a new user with a parameter to create either an employee or a client
@@ -264,7 +325,72 @@ app.use(async (req, res, next) => {
   }
 });
 
+// defining CRUD operations
 // Make a booking by the client
+app.post("/booking", async (req, res) => {
+  updateClient(req.body, res);
+  addBooking(req.body, res);
+  res.send({ message: "Client Updated and New Booking Added" });
+});
+
+// Populate booking site if we have the info
+app.get("/booking/:clientId", async (req, res) => {
+  res.send(await Client.findOne({ clientId: ObjectId(req.params.clientId) }));
+});
+
+// Create a new Job
+app.post("/Job", async (req, res) => {
+  const { clientId, roomId, serviceId, jobStatusId } = req.body;
+  if (!roomId || !serviceId) {
+    return res.send({
+      status: 404,
+      message: `Missing ${
+        roomId ? (serviceId ? "will never run :)" : "Service") : "Room"
+      }`,
+    });
+  }
+  const newJob = new Job(req.body);
+  const jobId = ObjectId();
+  newJob.jobId = jobId;
+  newJob.clientId = clientId;
+  newJob.jobStatusId = jobStatusId;
+  await newJob.save();
+  res.send({
+    status: 200,
+    message: `New Job Added`,
+  });
+});
+
+// Get the jobStatuses table
+// this will feed the drop down menu for the jobs page & the employee update page
+app.get("/jobStatus", async (req, res) => {
+  res.send(await JobStatus.find());
+});
+
+// Get the Rooms table
+// this will feed the drop down menu for the jobs page
+app.get("/room", async (req, res) => {
+  res.send(await Room.find());
+});
+
+// Get the Services table
+// this will feed the drop down menu for the jobs page
+app.get("/services", async (req, res) => {
+  res.send(await Services.find());
+});
+
+// Update the Job quoteId once the quote is compelted.
+// recurse over the job list in a quote in order to add the quoteId to all the jobs.
+app.put("/Job", async (req, res) => {
+  const quoteId = req.body.quoteId;
+  await Job.findOneAndUpdate(
+    { jobId: ObjectId(jobId) },
+    {
+      quoteId: quoteId,
+    }
+  );
+  return res.send({ status: 200, message: `Updated Jobs in quote` });
+});
 
 // defining CRUD operations
 // get all

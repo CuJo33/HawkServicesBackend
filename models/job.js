@@ -30,23 +30,20 @@ const JobSchema = new Scheme({
   employeeId: {
     type: ObjectId,
     required: true,
+    default: "614dab91d76d0c1576f8b9e7",
   },
   startDate: {
     type: Date,
-    default: Date.now,
   },
   estimatedCompletionDate: {
     type: Date,
-    default: Date.now,
   },
   completedDate: {
     type: Date,
-    default: Date.now,
   },
   clientSignOff: Boolean,
   clientSignOffDate: {
     type: Date,
-    default: Date.now,
   },
   lastUpdated: {
     type: Date,

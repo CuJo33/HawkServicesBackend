@@ -13,11 +13,22 @@ const BookingSchema = new Scheme({
   },
   employeeId: {
     type: ObjectId,
+    default: "614dab91d76d0c1576f8b9e7",
     required: true,
   },
-  requestDate: String,
-  bookedDate: String,
-  completed: Boolean,
+  requestDate: {
+    type: Date,
+    required: true,
+  },
+  bookedDate: {
+    type: Date,
+    default: Date.now,
+    required: true,
+  },
+  completed: {
+    type: Boolean,
+    default: false,
+  },
   lastUpdated: {
     type: Date,
     default: Date.now,
