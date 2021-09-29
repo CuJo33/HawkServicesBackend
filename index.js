@@ -242,7 +242,6 @@ async function updateClient(body, res) {
 // create a new booking
 async function addBooking(body, res) {
   const requestDate = body.requestDate;
-  console.log(body, "testing console");
   if (!requestDate) {
     return {
       status: 404,
@@ -364,27 +363,6 @@ app.get("/booking/:clientId", async (req, res) => {
   res.send(await Client.findOne({ clientId: ObjectId(req.params.clientId) }));
 });
 
-// Create a new Job
-app.post("/Job", async (req, res) => {
-  const { clientId, roomId, serviceId } = req.body;
-  if (!roomId || !serviceId) {
-    return res.send({
-      status: 404,
-      message: `Missing ${
-        roomId ? (serviceId ? "will never run :)" : "Service") : "Room"
-      }`,
-    });
-  }
-  const newJob = new Job(req.body);
-  const jobId = ObjectId();
-  newJob.jobId = jobId;
-  await newJob.save();
-  res.send({
-    status: 200,
-    message: `New Job Added`,
-  });
-});
-
 // Get the jobStatuses table
 // this will feed the drop down menu for the jobs page & the employee update page
 app.get("/jobStatus/:jobStatusId", async (req, res) => {
@@ -395,7 +373,7 @@ app.get("/jobStatus/:jobStatusId", async (req, res) => {
   }
 });
 
-// Get the service table
+// Get the rooms table
 // this will feed the drop down menu for the jobs page
 app.get("/rooms/:roomId", async (req, res) => {
   if (req.params.roomId === "-1") {
@@ -416,36 +394,151 @@ app.get("/services/:serviceId", async (req, res) => {
   }
 });
 
-// creat quote endoint
-// expect a job array in req.body []
-// server ioterates over array, and updates
-const updatejobquoteId = async (array, quoteId) => {
-  // array of job ids
-  // update each job to store quote id
+// Create a new Job
+app.post("/Job", async (req, res) => {
+  const { clientId, roomId, serviceId } = req.body;
+  if (!clientId || !roomId || !serviceId) {
+    return res.send({
+      status: 404,
+      message: `Missing ${
+        clientId
+          ? roomId
+            ? serviceId
+              ? "will never run :)"
+              : "Service"
+            : "Room"
+          : "Client"
+      }`,
+    });
+  }
+  const newJob = new Job(req.body);
+  const jobId = ObjectId();
+  newJob.jobId = jobId;
+  await newJob.save();
+  res.send({
+    status: 200,
+    jobId: jobId,
+    message: `New Job Added`,
+  });
+});
 
-  // update quote logic iterates over array
-  // const quoteId = req.body.quoteId;
-  await Job.findOneAndUpdate(
-    { jobId: jobId },
-    {
-      quoteId: quoteId,
-    }
-  );
+// update a job with the quoteIds
+app.put("/updateJob", async (req, res) => {
+  const { jobList, quoteId } = req.body;
+  try {
+    await updateJobQuoteId(jobList, quoteId);
+  } catch (error) {
+    return res.send({ status: 500, message: `Failed to update Jobs` });
+  }
   return res.send({ status: 200, message: `Updated Jobs in quote` });
+});
+
+// server iterates over array, and updates jobs with the new quoteId
+const updateJobQuoteId = async (array, quoteId) => {
+  var arrayLength = array.length;
+  for (var i = 0; i < arrayLength; i++) {
+    const jobId = array[i];
+    await Job.findOneAndUpdate(
+      { jobId: jobId },
+      {
+        quoteId: quoteId,
+      }
+    );
+  }
 };
 
-// Update the Job quoteId once the quote is compelted.
-// recurse over the job list in a quote in order to add the quoteId to all the jobs.
-// create a single job
-// return
-//
-// jobId created, job created on the table
-// job id is returned to the frontend
-// stored in jobIdArray
-// fronted then has array [jobId, jobId, jobID]
-//
+// create a new quote
+app.post("/quote", async (req, res) => {
+  const { clientId, employeeId, jobList } = req.body;
+  if (!clientId || !employeeId || !jobList) {
+    return res.send({
+      status: 404,
+      message: `Missing ${
+        clientId
+          ? employeeId
+            ? jobList
+              ? "will never run :)"
+              : "Jobs List"
+            : "Employee Id"
+          : "Client Id"
+      }`,
+    });
+  }
+  const newQuote = new Quote(req.body);
+  const quoteId = ObjectId();
+  newQuote.quoteId = quoteId;
+  try {
+    await newQuote.save();
+  } catch (error) {
+    return res.send({ status: 500, message: `New Quote failed` });
+  }
+  try {
+    await updateJobQuoteId(jobList, quoteId);
+  } catch (error) {
+    return res.send({
+      status: 500,
+      message: `Update Jobs with QuoteId failed`,
+    });
+  }
+  return res.send({ status: 200, message: `New Quote created & Jobs updated` });
+});
 
-// create
+// Get the Quote table
+// or specific quoteId
+app.get("/quote/:quoteId", async (req, res) => {
+  if (req.params.quoteId === "-1") {
+    res.send(await Quote.find());
+  } else {
+    res.send(await Quote.find({ quoteId: req.params.quoteId }));
+  }
+});
+
+// Delete a quote
+app.delete("/quote/:quoteId", async (req, res) => {
+  const quoteToDelete = await Quote.find({
+    quoteId: ObjectId(req.params.quoteId),
+  });
+  const jobsToDelete = quoteToDelete[0].jobList;
+  try {
+    // deleteJob(jobsToDelete);
+  } catch (error) {
+    return res.send({ status: 500, message: `Failed to delete Jobs` });
+  }
+  try {
+    await Quote.deleteOne({ quoteId: ObjectId(req.params.quoteId) });
+  } catch (error) {
+    return res.send({ status: 500, message: `Failed to delete Quote` });
+  }
+  res.send({ status: 200, message: "Quote and Jobs Deleted" });
+});
+
+// Delete an array of Jobs
+const deleteJob = async (array) => {
+  var arrayLength = array.length;
+  for (var i = 0; i < arrayLength; i++) {
+    const jobId = array[i];
+    await Job.findOneAndDelete({ jobId: jobId });
+  }
+};
+
+// Accept a quote
+app.put("/quote/:quoteId", async (req, res) => {
+  const quoteId = ObjectId(req.params, quoteId);
+  if (!quoteId) {
+    return res.send({
+      status: 404,
+      message: "Missing quoteId",
+    });
+  }
+  await Quote.findOneAndUpdate(
+    { quoteId: quoteId },
+    {
+      clientAccepted: true,
+      lastUpdated: Date.now,
+    }
+  );
+  res.send({ status: 200, message: "Quote Accepted" });
+});
 
 // defining CRUD operations
 // get all

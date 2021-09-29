@@ -16,8 +16,14 @@ const QuoteSchema = new Scheme({
     required: true,
   },
   jobList: Array,
-  clientAccepted: Boolean,
-  RequestDate: String,
+  clientAccepted: {
+    type: Boolean,
+    default: false,
+  },
+  RequestDate: {
+    type: Date,
+    default: Date.now,
+  },
   lastUpdated: {
     type: Date,
     default: Date.now,

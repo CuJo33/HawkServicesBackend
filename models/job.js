@@ -13,7 +13,6 @@ const JobSchema = new Scheme({
   },
   quoteId: {
     type: ObjectId,
-    required: true,
   },
   roomId: {
     type: ObjectId,
