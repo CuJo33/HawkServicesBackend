@@ -191,6 +191,10 @@ async function updateClient(body, res) {
     postCode,
     telephoneNumber,
   } = body;
+  // const stringif = JSON.stringify(body);
+  // if (stringif.includes("")) {
+  //   console.log("missing field");
+  // }
   if (
     !firstName ||
     !surname ||
@@ -199,7 +203,7 @@ async function updateClient(body, res) {
     !postCode ||
     !telephoneNumber
   ) {
-    return res.send({
+    return {
       status: 404,
       message: `Missing ${
         firstName
@@ -216,7 +220,7 @@ async function updateClient(body, res) {
             : "Surname"
           : "First name"
       }`,
-    });
+    };
   }
   await Client.findOneAndUpdate(
     { clientId: ObjectId(clientId) },
@@ -229,22 +233,28 @@ async function updateClient(body, res) {
       telephoneNumber: telephoneNumber,
     }
   );
+  return {
+    status: 200,
+    message: "Client Updated",
+  };
 }
 
 // create a new booking
 async function addBooking(body, res) {
   const requestDate = body.requestDate;
+  console.log(body, "testing console");
   if (!requestDate) {
-    return res.send({
+    return {
       status: 404,
       message: `Missing Request Date`,
-    });
+    };
   }
   const newBooking = new Booking(body);
   const bookingId = ObjectId();
   newBooking.bookingId = bookingId;
   newBooking.requestDate = requestDate;
   await newBooking.save();
+  return { status: 200, message: `Success` };
 }
 
 // create a new user with a parameter to create either an employee or a client
@@ -258,13 +268,13 @@ app.post("/signup/:userType", async (req, res) => {
     if (oldUser) {
       return res.send({ status: 404, message: `User already exists` });
     }
-    addClient(req.body, res);
+    await addClient(req.body, res);
   } else if (req.params.userType === "employee") {
     const oldUser = await Employee.findOne({ username: req.body.username });
     if (oldUser) {
       return res.send({ status: 404, message: `User already exists` });
     }
-    addEmployee(req.body, res);
+    await addEmployee(req.body, res);
   } else {
     return res.send({ status: 404, message: `That Page Doesn't exist` });
   }
@@ -277,7 +287,7 @@ app.post("/signup/:userType", async (req, res) => {
 // requires username and password
 // returns the auth token
 // updates the client table with that token.
-app.post("/login/", async (req, res) => {
+app.post("/login", async (req, res) => {
   const client = await Client.findOne({ username: req.body.username });
   if (!client) {
     return res.send({ status: 401, message: "Missing Username" });
@@ -307,29 +317,45 @@ app.post("/login/employee", async (req, res) => {
   res.send({ token: employee.token });
 });
 
-// Only if we have an auth do next()
-app.use(async (req, res, next) => {
-  const authHeader = req.headers["auth"];
-  // Check if Client and allow through if authed
-  const client = await Client.findOne({ token: authHeader });
-  if (client) {
-    next();
-  } else {
-    // Check if employee and allow through if authed
-    const employee = await Employee.findOne({ token: authHeader });
-    if (employee) {
-      next();
-    } else {
-      res.sendStatus(403);
-    }
-  }
-});
+//  Only if we have an auth do next()
+// app.use(async (req, res, next) => {
+//   const authHeader = req.headers["auth"];
+//   // Check if Client and allow through if authed
+//   if (!authHeader) {
+//     res.sendStatus(403);
+//     return;
+//   }
+//   const client = await Client.findOne({ token: authHeader });
+//   console.log(client);
+//   if (client) {
+//     next();
+//   } else {
+//     // Check if employee and allow through if authed
+//     const employee = await Employee.findOne({ token: authHeader });
+//     if (employee) {
+//       next();
+//     } else {
+//       res.sendStatus(403);
+//     }
+//   }
+// });
 
 // defining CRUD operations
 // Make a booking by the client
 app.post("/booking", async (req, res) => {
-  updateClient(req.body, res);
-  addBooking(req.body, res);
+  // need error handling here
+  // updateClient(req.body, res);
+  const response = await updateClient(req.body, res);
+  console.log(response);
+  if (response.status === 404) {
+    res.send(response);
+    return;
+  }
+  const bookingResponse = await addBooking(req.body, res);
+  if (bookingResponse.status === 404) {
+    res.send(bookingResponse.message);
+    return;
+  }
   res.send({ message: "Client Updated and New Booking Added" });
 });
 
@@ -340,7 +366,7 @@ app.get("/booking/:clientId", async (req, res) => {
 
 // Create a new Job
 app.post("/Job", async (req, res) => {
-  const { clientId, roomId, serviceId, jobStatusId } = req.body;
+  const { clientId, roomId, serviceId } = req.body;
   if (!roomId || !serviceId) {
     return res.send({
       status: 404,
@@ -352,8 +378,6 @@ app.post("/Job", async (req, res) => {
   const newJob = new Job(req.body);
   const jobId = ObjectId();
   newJob.jobId = jobId;
-  newJob.clientId = clientId;
-  newJob.jobStatusId = jobStatusId;
   await newJob.save();
   res.send({
     status: 200,
@@ -363,34 +387,65 @@ app.post("/Job", async (req, res) => {
 
 // Get the jobStatuses table
 // this will feed the drop down menu for the jobs page & the employee update page
-app.get("/jobStatus", async (req, res) => {
-  res.send(await JobStatus.find());
+app.get("/jobStatus/:jobStatusId", async (req, res) => {
+  if (req.params.jobStatusId === "-1") {
+    res.send(await JobStatus.find());
+  } else {
+    res.send(await JobStatus.find({ jobStatusId: req.params.jobStatusId }));
+  }
 });
 
-// Get the Rooms table
+// Get the service table
 // this will feed the drop down menu for the jobs page
-app.get("/room", async (req, res) => {
-  res.send(await Room.find());
+app.get("/rooms/:roomId", async (req, res) => {
+  if (req.params.roomId === "-1") {
+    console.log("equals");
+    res.send(await Room.find());
+  } else {
+    res.send(await Room.find({ roomId: req.params.roomId }));
+  }
 });
 
 // Get the Services table
 // this will feed the drop down menu for the jobs page
-app.get("/services", async (req, res) => {
-  res.send(await Services.find());
+app.get("/services/:serviceId", async (req, res) => {
+  if (req.params.serviceId === "-1") {
+    res.send(await Service.find());
+  } else {
+    res.send(await Service.find({ serviceId: req.params.serviceId }));
+  }
 });
 
-// Update the Job quoteId once the quote is compelted.
-// recurse over the job list in a quote in order to add the quoteId to all the jobs.
-app.put("/Job", async (req, res) => {
-  const quoteId = req.body.quoteId;
+// creat quote endoint
+// expect a job array in req.body []
+// server ioterates over array, and updates
+const updatejobquoteId = async (array, quoteId) => {
+  // array of job ids
+  // update each job to store quote id
+
+  // update quote logic iterates over array
+  // const quoteId = req.body.quoteId;
   await Job.findOneAndUpdate(
-    { jobId: ObjectId(jobId) },
+    { jobId: jobId },
     {
       quoteId: quoteId,
     }
   );
   return res.send({ status: 200, message: `Updated Jobs in quote` });
-});
+};
+
+// Update the Job quoteId once the quote is compelted.
+// recurse over the job list in a quote in order to add the quoteId to all the jobs.
+// create a single job
+// return
+//
+// jobId created, job created on the table
+// job id is returned to the frontend
+// stored in jobIdArray
+// fronted then has array [jobId, jobId, jobID]
+//
+
+// create
 
 // defining CRUD operations
 // get all

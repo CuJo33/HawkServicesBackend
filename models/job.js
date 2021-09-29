@@ -26,11 +26,12 @@ const JobSchema = new Scheme({
   jobStatusId: {
     type: ObjectId,
     required: true,
+    default: "6152e010d79b5ac940fa0cba", // Not started
   },
   employeeId: {
     type: ObjectId,
     required: true,
-    default: "614dab91d76d0c1576f8b9e7",
+    default: "614dab91d76d0c1576f8b9e7", // unassigned
   },
   startDate: {
     type: Date,
@@ -41,7 +42,10 @@ const JobSchema = new Scheme({
   completedDate: {
     type: Date,
   },
-  clientSignOff: Boolean,
+  clientSignOff: {
+    type: Boolean,
+    default: false,
+  },
   clientSignOffDate: {
     type: Date,
   },
