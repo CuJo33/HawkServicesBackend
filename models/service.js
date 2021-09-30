@@ -9,11 +9,9 @@ const ServiceSchema = new Scheme({
   },
   specificRoomId: {
     type: ObjectId,
-    required: true,
   },
   specificResourceId: {
     type: ObjectId,
-    required: true,
   },
   serviceName: String,
   fullServiceName: String,

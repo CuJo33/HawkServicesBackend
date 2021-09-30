@@ -18,6 +18,7 @@ const Room = require("./models/room");
 const Service = require("./models/service");
 const { v4: uuidv4 } = require("uuid");
 const { removeAllListeners } = require("nodemon");
+const { findOne } = require("./models/booking");
 
 mongoose.connect(
   "mongodb+srv://user:B4gwNf8wEtXUSWOS@cluster0.m3j75.mongodb.net/hawkservices?retryWrites=true&w=majority",
@@ -538,6 +539,54 @@ app.put("/quote/:quoteId", async (req, res) => {
     }
   );
   res.send({ status: 200, message: "Quote Accepted" });
+});
+
+// Create a new Room
+app.post("/room", async (req, res) => {
+  const { fullRoomName } = req.body;
+  if (!fullRoomName) {
+    return res.send({
+      status: 404,
+      message: `Missing ${fullRoomName ? "will never run :)" : "Room name"}`,
+    });
+  }
+  const newRoom = new Room(req.body);
+  const roomId = ObjectId();
+  newRoom.roomId = roomId;
+  // create a capitalised version of the fullRoomName with no spaces
+  let roomName = fullRoomName.toUpperCase();
+  roomName = roomName.replace(/\s+/g, "");
+  newRoom.roomName = roomName;
+  await newRoom.save();
+  res.send({
+    status: 200,
+    message: `New Room Added`,
+  });
+});
+
+// Create a new Service
+app.post("/service", async (req, res) => {
+  const { fullServiceName } = req.body;
+  if (!fullServiceName) {
+    return res.send({
+      status: 404,
+      message: `Missing ${
+        fullServiceName ? "will never run :)" : "Service name"
+      }`,
+    });
+  }
+  const newService = new Service(req.body);
+  const serviceId = ObjectId();
+  newService.serviceId = serviceId;
+  // create a capitalised version of the fullServiceName with no spaces
+  let serviceName = fullServiceName.toUpperCase();
+  serviceName = serviceName.replace(/\s+/g, "");
+  newService.serviceName = serviceName;
+  await newService.save();
+  res.send({
+    status: 200,
+    message: `New Service Added`,
+  });
 });
 
 // defining CRUD operations
