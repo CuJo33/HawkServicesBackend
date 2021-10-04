@@ -378,7 +378,6 @@ app.get("/jobStatus/:jobStatusId", async (req, res) => {
 // this will feed the drop down menu for the jobs page
 app.get("/rooms/:roomId", async (req, res) => {
   if (req.params.roomId === "-1") {
-    console.log("equals");
     res.send(await Room.find());
   } else {
     res.send(await Room.find({ roomId: req.params.roomId }));
