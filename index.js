@@ -184,7 +184,7 @@ async function addEmployee(body, res) {
 // update the client table with the additional information
 async function updateClient(body, res) {
   const {
-    clientId,
+    token,
     firstName,
     surname,
     addressLine1,
@@ -223,8 +223,8 @@ async function updateClient(body, res) {
       }`,
     };
   }
-  await Client.findOneAndUpdate(
-    { clientId: ObjectId(clientId) },
+  const ret = await Client.findOneAndUpdate(
+    { token: ObjectId(token) },
     {
       firstName: firstName,
       surname: surname,
@@ -234,9 +234,13 @@ async function updateClient(body, res) {
       telephoneNumber: telephoneNumber,
     }
   );
+  if (!ret || ret === null) {
+    return { status: 404, message: "No data found" };
+  }
   return {
     status: 200,
     message: "Client Updated",
+    data: ret,
   };
 }
 
@@ -249,8 +253,10 @@ async function addBooking(body, res) {
       message: `Missing Request Date`,
     };
   }
+  const clientId = body.clientId;
   const newBooking = new Booking(body);
   const bookingId = ObjectId();
+  newBooking.clientId = clientId;
   newBooking.bookingId = bookingId;
   newBooking.requestDate = requestDate;
   await newBooking.save();
@@ -343,14 +349,12 @@ app.post("/login/employee", async (req, res) => {
 // defining CRUD operations
 // Make a booking by the client
 app.post("/booking", async (req, res) => {
-  // need error handling here
-  // updateClient(req.body, res);
   const response = await updateClient(req.body, res);
-  console.log(response);
   if (response.status === 404) {
     res.send(response);
     return;
   }
+  req.body.clientId = response.data.clientId;
   const bookingResponse = await addBooking(req.body, res);
   if (bookingResponse.status === 404) {
     res.send(bookingResponse.message);
