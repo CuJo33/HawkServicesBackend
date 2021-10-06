@@ -303,7 +303,7 @@ app.post("/login", async (req, res) => {
   }
   client.token = ObjectId();
   await client.save();
-  res.send({ token: client.token });
+  res.send({ token: client.token, clientId: client.clientId });
 });
 
 // Employee Login
@@ -320,7 +320,7 @@ app.post("/login/employee", async (req, res) => {
   }
   employee.token = ObjectId();
   await employee.save();
-  res.send({ token: employee.token });
+  res.send({ token: employee.token, employeeId: employee.employeeId });
 });
 
 //  Only if we have an auth do next()
