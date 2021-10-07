@@ -349,6 +349,7 @@ app.post("/login/employee", async (req, res) => {
 // defining CRUD operations
 // Make a booking by the client
 app.post("/booking", async (req, res) => {
+  console.log("into the booking call");
   const response = await updateClient(req.body, res);
   if (response.status === 404) {
     res.send(response);
@@ -360,7 +361,7 @@ app.post("/booking", async (req, res) => {
     res.send(bookingResponse.message);
     return;
   }
-  res.send({ message: "Client Updated and New Booking Added" });
+  res.send({ status: 200, message: "Client Updated and New Booking Added" });
 });
 
 // Populate booking site if we have the info
@@ -399,7 +400,7 @@ app.get("/services/:serviceId", async (req, res) => {
 });
 
 // Create a new Job
-app.post("/Job", async (req, res) => {
+app.post("/job", async (req, res) => {
   const { clientId, roomId, serviceId } = req.body;
   if (!clientId || !roomId || !serviceId) {
     return res.send({
@@ -514,6 +515,16 @@ app.delete("/quote/:quoteId", async (req, res) => {
     return res.send({ status: 500, message: `Failed to delete Quote` });
   }
   res.send({ status: 200, message: "Quote and Jobs Deleted" });
+});
+
+// Delete a Job
+app.delete("/job/:jobId", async (req, res) => {
+  try {
+    await Job.deleteOne({ jobId: ObjectId(req.params.jobId) });
+  } catch (error) {
+    return res.send({ status: 500, message: `Failed to delete Job` });
+  }
+  res.send({ status: 200, message: "Job Deleted" });
 });
 
 // Delete an array of Jobs
