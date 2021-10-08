@@ -20,6 +20,10 @@ const BookingSchema = new Scheme({
     type: Date,
     required: true,
   },
+  requestTime: {
+    type: String,
+    required: true,
+  },
   bookedDate: {
     type: Date,
     default: Date.now,

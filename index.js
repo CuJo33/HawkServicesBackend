@@ -247,10 +247,18 @@ async function updateClient(body, res) {
 // create a new booking
 async function addBooking(body, res) {
   const requestDate = body.requestDate;
-  if (!requestDate) {
+  const requestTime = body.requestTime;
+  console.log(requestDate, requestTime);
+  if (!requestDate || !requestTime) {
     return {
       status: 404,
-      message: `Missing Request Date`,
+      message: `Missing ${
+        requestDate
+          ? requestTime
+            ? "will never run :)"
+            : "Request Time"
+          : "Request Date"
+      }`,
     };
   }
   const clientId = body.clientId;
@@ -259,6 +267,7 @@ async function addBooking(body, res) {
   newBooking.clientId = clientId;
   newBooking.bookingId = bookingId;
   newBooking.requestDate = requestDate;
+  newBooking.requestTime = requestTime;
   await newBooking.save();
   return { status: 200, message: `Success` };
 }
@@ -349,7 +358,7 @@ app.post("/login/employee", async (req, res) => {
 // defining CRUD operations
 // Make a booking by the client
 app.post("/booking", async (req, res) => {
-  console.log("into the booking call");
+  console.log("in booking");
   const response = await updateClient(req.body, res);
   if (response.status === 404) {
     res.send(response);
