@@ -375,7 +375,12 @@ app.post("/booking", async (req, res) => {
 
 // Populate booking site if we have the info
 app.get("/booking/:clientId", async (req, res) => {
-  res.send(await Client.findOne({ clientId: ObjectId(req.params.clientId) }));
+  console.log("i am a booking", req.params.clientId);
+  if (req.params.clientId === "-1") {
+    res.send(await Booking.find());
+  } else {
+    res.send(await Booking.find({ clientId: req.params.clientId }));
+  }
 });
 
 // Get the jobStatuses table
@@ -498,12 +503,22 @@ app.post("/quote", async (req, res) => {
 });
 
 // Get the Quote table
-// or specific quoteId
-app.get("/quote/:quoteId", async (req, res) => {
+// or specific quotes for a clientId
+app.get("/quotes/:clientId", async (req, res) => {
   if (req.params.quoteId === "-1") {
     res.send(await Quote.find());
   } else {
-    res.send(await Quote.find({ quoteId: req.params.quoteId }));
+    res.send(await Quote.find({ clientId: req.params.clientId }));
+  }
+});
+
+// Get the Quote table
+// or specific quoteId
+app.get("/quote/:quoteId", async (req, res) => {
+  try {
+    res.send(await Quote.find({ clientId: req.params.clientId }));
+  } catch (error) {
+    return res.send({ status: 500, message: `Failed to find Quote` });
   }
 });
 
@@ -610,6 +625,15 @@ app.post("/service", async (req, res) => {
     status: 200,
     message: `New Service Added`,
   });
+});
+
+// Get an employee
+app.get("/employee/:employeeId", async (req, res) => {
+  if (req.params.employeeId === "-1") {
+    res.send(await Employee.find());
+  } else {
+    res.send(await Employee.findOne({ employeeId: req.params.employeeId }));
+  }
 });
 
 // defining CRUD operations
