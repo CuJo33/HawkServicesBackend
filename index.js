@@ -389,7 +389,7 @@ app.get("/jobStatus/:jobStatusId", async (req, res) => {
   if (req.params.jobStatusId === "-1") {
     res.send(await JobStatus.find());
   } else {
-    res.send(await JobStatus.find({ jobStatusId: req.params.jobStatusId }));
+    res.send(await JobStatus.findOne({ jobStatusId: req.params.jobStatusId }));
   }
 });
 
@@ -399,7 +399,7 @@ app.get("/rooms/:roomId", async (req, res) => {
   if (req.params.roomId === "-1") {
     res.send(await Room.find());
   } else {
-    res.send(await Room.find({ roomId: req.params.roomId }));
+    res.send(await Room.findOne({ roomId: req.params.roomId }));
   }
 });
 
@@ -409,7 +409,7 @@ app.get("/services/:serviceId", async (req, res) => {
   if (req.params.serviceId === "-1") {
     res.send(await Service.find());
   } else {
-    res.send(await Service.find({ serviceId: req.params.serviceId }));
+    res.send(await Service.findOne({ serviceId: req.params.serviceId }));
   }
 });
 
@@ -516,7 +516,7 @@ app.get("/quotes/:clientId", async (req, res) => {
 // or specific quoteId
 app.get("/quote/:quoteId", async (req, res) => {
   try {
-    res.send(await Quote.find({ clientId: req.params.clientId }));
+    res.send(await Quote.find({ quoteId: req.params.quoteId }));
   } catch (error) {
     return res.send({ status: 500, message: `Failed to find Quote` });
   }
@@ -562,7 +562,7 @@ const deleteJob = async (array) => {
 
 // Accept a quote
 app.put("/quote/:quoteId", async (req, res) => {
-  const quoteId = ObjectId(req.params, quoteId);
+  const quoteId = ObjectId(req.params.quoteId);
   if (!quoteId) {
     return res.send({
       status: 404,
@@ -573,7 +573,7 @@ app.put("/quote/:quoteId", async (req, res) => {
     { quoteId: quoteId },
     {
       clientAccepted: true,
-      lastUpdated: Date.now,
+      lastUpdated: String(Date.now()),
     }
   );
   res.send({ status: 200, message: "Quote Accepted" });
@@ -636,32 +636,37 @@ app.get("/employee/:employeeId", async (req, res) => {
   }
 });
 
+// Get jobs on quoteId
+app.get("/jobs/:quoteId", async (req, res) => {
+  res.send(await Job.find({ quoteId: req.params.quoteId }));
+});
+
 // defining CRUD operations
-// get all
-app.get("/", async (req, res) => {
-  res.send(await Event.find());
-});
+// // get all
+// app.get("/", async (req, res) => {
+//   res.send(await Event.find());
+// });
 
-// post new
-app.post("/", async (req, res) => {
-  const newEvent = req.body;
-  const event = new Event(newEvent);
-  event.date = new Date(req.body.date).toISOString().slice(0, 10);
-  await event.save();
-  res.send({ message: "New Event Added" });
-});
+// // post new
+// app.post("/", async (req, res) => {
+//   const newEvent = req.body;
+//   const event = new Event(newEvent);
+//   event.date = new Date(req.body.date).toISOString().slice(0, 10);
+//   await event.save();
+//   res.send({ message: "New Event Added" });
+// });
 
-// delete
-app.delete("/:id", async (req, res) => {
-  await Event.deleteOne({ _id: ObjectId(req.params.id) });
-  res.send({ message: "Event Deleted" });
-});
+// // delete
+// app.delete("/:id", async (req, res) => {
+//   await Event.deleteOne({ _id: ObjectId(req.params.id) });
+//   res.send({ message: "Event Deleted" });
+// });
 
-// find and update
-app.put("/:id", async (req, res) => {
-  await Event.findOneAndUpdate({ _id: ObjectId(req.params.id) }, req.body);
-  res.send({ message: "Event updated" });
-});
+// // find and update
+// app.put("/:id", async (req, res) => {
+//   await Event.findOneAndUpdate({ _id: ObjectId(req.params.id) }, req.body);
+//   res.send({ message: "Event updated" });
+// });
 
 // starting the server
 app.listen(port, () => {

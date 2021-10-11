@@ -20,7 +20,7 @@ const QuoteSchema = new Scheme({
     type: Boolean,
     default: false,
   },
-  RequestDate: {
+  requestDate: {
     type: Date,
     default: Date.now,
   },
