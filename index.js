@@ -375,11 +375,19 @@ app.post("/booking", async (req, res) => {
 
 // Populate booking site if we have the info
 app.get("/booking/:clientId", async (req, res) => {
-  console.log("i am a booking", req.params.clientId);
   if (req.params.clientId === "-1") {
     res.send(await Booking.find());
   } else {
     res.send(await Booking.find({ clientId: req.params.clientId }));
+  }
+});
+
+// Populate booking site if we have the info
+app.get("/bookingEmployee/:employeeId", async (req, res) => {
+  if (req.params.employeeId === "-1") {
+    res.send(await Booking.find());
+  } else {
+    res.send(await Booking.find({ employeeId: req.params.employeeId }));
   }
 });
 
@@ -509,6 +517,16 @@ app.get("/quotes/:clientId", async (req, res) => {
     res.send(await Quote.find());
   } else {
     res.send(await Quote.find({ clientId: req.params.clientId }));
+  }
+});
+
+// Get the Quote table
+// or specific quotes for a employeeId
+app.get("/quotesEmployee/:employeeId", async (req, res) => {
+  if (req.params.quoteId === "-1") {
+    res.send(await Quote.find());
+  } else {
+    res.send(await Quote.find({ employeeId: req.params.employeeId }));
   }
 });
 
