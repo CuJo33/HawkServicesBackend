@@ -329,7 +329,11 @@ app.post("/login/employee", async (req, res) => {
   }
   employee.token = ObjectId();
   await employee.save();
-  res.send({ token: employee.token, employeeId: employee.employeeId });
+  res.send({
+    token: employee.token,
+    employeeId: employee.employeeId,
+    role: employee.role,
+  });
 });
 
 //  Only if we have an auth do next()
@@ -391,6 +395,31 @@ app.get("/bookingEmployee/:employeeId", async (req, res) => {
   }
 });
 
+app.put("/booking/:bookingId/:employeeId", async (req, res) => {
+  const bookingId = ObjectId(req.params.bookingId);
+  const employeeId = ObjectId(req.params.employeeId);
+  if (!bookingId) {
+    return res.send({
+      status: 404,
+      message: "Missing bookingId",
+    });
+  }
+  if (!employeeId) {
+    return res.send({
+      status: 404,
+      message: "Missing employeeId",
+    });
+  }
+  await Booking.findOneAndUpdate(
+    { bookingId: bookingId },
+    {
+      employeeId: employeeId,
+      lastUpdated: String(Date.now()),
+    }
+  );
+  res.send({ status: 200, message: "Booking Updated" });
+});
+
 // Get the jobStatuses table
 // this will feed the drop down menu for the jobs page & the employee update page
 app.get("/jobStatus/:jobStatusId", async (req, res) => {
@@ -398,6 +427,16 @@ app.get("/jobStatus/:jobStatusId", async (req, res) => {
     res.send(await JobStatus.find());
   } else {
     res.send(await JobStatus.findOne({ jobStatusId: req.params.jobStatusId }));
+  }
+});
+
+// Get the rooms table
+// this will feed the drop down menu for the jobs page
+app.get("/clients/:clientId", async (req, res) => {
+  if (req.params.roomId === "-1") {
+    res.send(await Client.find());
+  } else {
+    res.send(await Client.findOne({ clientId: req.params.clientId }));
   }
 });
 
