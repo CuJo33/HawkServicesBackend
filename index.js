@@ -513,6 +513,16 @@ const updateJobQuoteId = async (array, quoteId) => {
   }
 };
 
+// Get the Quote table
+// or specific quotes for a employeeId
+app.get("/quotesEmployee/:employeeId", async (req, res) => {
+  if (req.params.quoteId === "-1") {
+    res.send(await Quote.find());
+  } else {
+    res.send(await Quote.find({ employeeId: req.params.employeeId }));
+  }
+});
+
 // create a new quote
 app.post("/quote", async (req, res) => {
   const { clientId, employeeId, jobList } = req.body;
@@ -552,20 +562,13 @@ app.post("/quote", async (req, res) => {
 // Get the Quote table
 // or specific quotes for a clientId
 app.get("/quotes/:clientId", async (req, res) => {
-  if (req.params.quoteId === "-1") {
+  console.log(req.params.clientId);
+  if (req.params.clientId === "-1") {
+    console.log("is -1");
     res.send(await Quote.find());
   } else {
+    console.log("isnt -1");
     res.send(await Quote.find({ clientId: req.params.clientId }));
-  }
-});
-
-// Get the Quote table
-// or specific quotes for a employeeId
-app.get("/quotesEmployee/:employeeId", async (req, res) => {
-  if (req.params.quoteId === "-1") {
-    res.send(await Quote.find());
-  } else {
-    res.send(await Quote.find({ employeeId: req.params.employeeId }));
   }
 });
 
@@ -606,6 +609,31 @@ app.delete("/job/:jobId", async (req, res) => {
     return res.send({ status: 500, message: `Failed to delete Job` });
   }
   res.send({ status: 200, message: "Job Deleted" });
+});
+
+app.put("/jobs/:jobId/:employeeId", async (req, res) => {
+  const jobId = ObjectId(req.params.jobId);
+  const employeeId = ObjectId(req.params.employeeId);
+  if (!jobId) {
+    return res.send({
+      status: 404,
+      message: "Missing jobId",
+    });
+  }
+  if (!employeeId) {
+    return res.send({
+      status: 404,
+      message: "Missing employeeId",
+    });
+  }
+  await Job.findOneAndUpdate(
+    { jobId: jobId },
+    {
+      employeeId: employeeId,
+      lastUpdated: String(Date.now()),
+    }
+  );
+  res.send({ status: 200, message: "Job Updated" });
 });
 
 // Delete an array of Jobs
@@ -694,8 +722,17 @@ app.get("/employee/:employeeId", async (req, res) => {
 });
 
 // Get jobs on quoteId
-app.get("/jobs/:quoteId", async (req, res) => {
+app.get("/jobsByQuoteId/:quoteId", async (req, res) => {
   res.send(await Job.find({ quoteId: req.params.quoteId }));
+});
+
+// Get the jobs table
+app.get("/jobs/:jobId", async (req, res) => {
+  if (req.params.jobId === "-1") {
+    res.send(await JobStatus.find());
+  } else {
+    res.send(await Job.findOne({ jobId: req.params.jobId }));
+  }
 });
 
 // defining CRUD operations
