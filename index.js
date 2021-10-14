@@ -395,6 +395,7 @@ app.get("/bookingEmployee/:employeeId", async (req, res) => {
   }
 });
 
+// update employeeId in booking
 app.put("/booking/:bookingId/:employeeId", async (req, res) => {
   const bookingId = ObjectId(req.params.bookingId);
   const employeeId = ObjectId(req.params.employeeId);
@@ -418,6 +419,94 @@ app.put("/booking/:bookingId/:employeeId", async (req, res) => {
     }
   );
   res.send({ status: 200, message: "Booking Updated" });
+});
+
+// update job Status Id in jobs
+app.put("/jobStatus/:jobId/:jobStatusId", async (req, res) => {
+  const jobId = ObjectId(req.params.jobId);
+  const jobStatusId = ObjectId(req.params.jobStatusId);
+  if (!jobId) {
+    return res.send({
+      status: 404,
+      message: "Missing jobId",
+    });
+  }
+  if (!jobStatusId) {
+    return res.send({
+      status: 404,
+      message: "Missing jobStatusId",
+    });
+  }
+  await Job.findOneAndUpdate(
+    { jobId: jobId },
+    {
+      jobStatusId: jobStatusId,
+      lastUpdated: String(Date.now()),
+    }
+  );
+  res.send({ status: 200, message: "Job Updated" });
+});
+
+// update job StartDate in jobs
+app.put("/jobsStartDate/:jobId", async (req, res) => {
+  const jobId = ObjectId(req.params.jobId);
+  if (!jobId) {
+    return res.send({
+      status: 404,
+      message: "Missing jobId",
+    });
+  }
+  var newDate = new Date();
+  newDate.setDate(newDate.getDate() + 1);
+  await Job.findOneAndUpdate(
+    { jobId: jobId },
+    {
+      startDate: String(Date.now()),
+      estimatedCompletionDate: String(newDate),
+      lastUpdated: String(Date.now()),
+    }
+  );
+  res.send({ status: 200, message: "Job Updated" });
+});
+
+// update job StartDate in jobs
+app.put("/jobsCompleteDate/:jobId", async (req, res) => {
+  const jobId = ObjectId(req.params.jobId);
+  if (!jobId) {
+    return res.send({
+      status: 404,
+      message: "Missing jobId",
+    });
+  }
+  await Job.findOneAndUpdate(
+    { jobId: jobId },
+    {
+      completedDate: String(Date.now()),
+      lastUpdated: String(Date.now()),
+    }
+  );
+  res.send({ status: 200, message: "Job Updated" });
+});
+
+// update job StartDate in jobs
+app.put("/jobsSignOff/:jobId", async (req, res) => {
+  const jobId = ObjectId(req.params.jobId);
+  if (!jobId) {
+    return res.send({
+      status: 404,
+      message: "Missing jobId",
+    });
+  }
+  await Job.findOneAndUpdate(
+    { jobId: jobId },
+    {
+      clientSignOff: true,
+      jobStatusId: "6168116a12eefab8c04cb03b",
+      clientSignOffDate: String(Date.now()),
+      lastUpdated: String(Date.now()),
+    }
+  );
+  res.send({ status: 200, message: "Job Updated" });
 });
 
 // Get the jobStatuses table
@@ -614,6 +703,7 @@ app.delete("/job/:jobId", async (req, res) => {
 app.put("/jobs/:jobId/:employeeId", async (req, res) => {
   const jobId = ObjectId(req.params.jobId);
   const employeeId = ObjectId(req.params.employeeId);
+  console.log("in backend ", jobId, employeeId);
   if (!jobId) {
     return res.send({
       status: 404,
@@ -626,14 +716,17 @@ app.put("/jobs/:jobId/:employeeId", async (req, res) => {
       message: "Missing employeeId",
     });
   }
-  await Job.findOneAndUpdate(
+  const data = await Job.findOneAndUpdate(
     { jobId: jobId },
     {
       employeeId: employeeId,
       lastUpdated: String(Date.now()),
+    },
+    {
+      returnOriginal: false,
     }
   );
-  res.send({ status: 200, message: "Job Updated" });
+  res.send({ status: 200, message: "Job Updated", data: data });
 });
 
 // Delete an array of Jobs
@@ -724,6 +817,11 @@ app.get("/employee/:employeeId", async (req, res) => {
 // Get jobs on quoteId
 app.get("/jobsByQuoteId/:quoteId", async (req, res) => {
   res.send(await Job.find({ quoteId: req.params.quoteId }));
+});
+
+// Get jobs on quoteId
+app.get("/jobsByEmployeeId/:employeeId", async (req, res) => {
+  res.send(await Job.find({ employeeId: req.params.employeeId }));
 });
 
 // Get the jobs table
